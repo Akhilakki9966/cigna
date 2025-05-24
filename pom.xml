@@ -1,0 +1,42 @@
+import java.io.*;
+import java.util.concurrent.*;
+
+class FileProcessor implements Callable<Integer> {
+    private String fileName;
+
+    public FileProcessor(String fileName) {
+        this.fileName = fileName;
+    }
+
+    @Override
+    public Integer call() throws Exception {
+        int sum = 0;
+        try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sum += Integer.parseInt(line.trim());
+            }
+        } catch (IOException | NumberFormatException e) {
+            System.err.println("Error processing file: " + fileName);
+        }
+        return sum;
+    }
+}
+
+public class MultiThreadedFileProcessor {
+    public static void main(String[] args) {
+        ExecutorService executor = Executors.newFixedThreadPool(3);
+        Future<Integer> result1 = executor.submit(new FileProcessor("file1.txt"));
+        Future<Integer> result2 = executor.submit(new FileProcessor("file2.txt"));
+        Future<Integer> result3 = executor.submit(new FileProcessor("file3.txt"));
+
+        try {
+            int totalSum = result1.get() + result2.get() + result3.get();
+            System.out.println("Total sum of numbers across files: " + totalSum);
+        } catch (InterruptedException | ExecutionException e) {
+            System.err.println("Error computing total sum");
+        } finally {
+            executor.shutdown();
+        }
+    }
+}
